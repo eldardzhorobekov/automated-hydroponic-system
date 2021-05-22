@@ -8,12 +8,30 @@
     "eject": "expo eject"
   },
   "dependencies": {
+    "@babel/plugin-proposal-class-properties": "^7.13.0",
+    "@babel/preset-react": "^7.13.13",
+    "@babel/preset-stage-3": "^7.8.3",
+    "@expo/webpack-config": "^0.12.72",
+    "@ptomasroos/react-native-multi-slider": "^2.2.2",
+    "@react-native-community/slider": "3.0.3",
+    "@react-navigation/bottom-tabs": "^5.11.11",
+    "@react-navigation/native": "^5.9.4",
     "expo": "~41.0.1",
     "expo-status-bar": "~1.0.4",
     "react": "16.13.1",
     "react-dom": "16.13.1",
+    "react-loader-spinner": "^4.0.0",
+    "react-loading-skeleton": "^2.2.0",
+    "react-loading-spinner": "^1.0.12",
     "react-native": "https://github.com/expo/react-native/archive/sdk-41.0.0.tar.gz",
-    "react-native-web": "~0.13.12"
+    "react-native-screens": "^3.2.0",
+    "react-native-vector-icons": "^8.1.0",
+    "react-native-web": "~0.13.12",
+    "react-native-web-ui-components": "^6.0.1",
+    "react-native-wheel-color-picker": "^1.0.2",
+    "react-router": "^5.2.0",
+    "react-router-native": "^5.2.0",
+    "rn-range-slider": "^2.0.4"
   },
   "devDependencies": {
     "@babel/core": "^7.9.0"
