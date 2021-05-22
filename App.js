@@ -1,21 +1,42 @@
-import { StatusBar } from 'expo-status-bar';
-import React from 'react';
-import { StyleSheet, Text, View } from 'react-native';
+import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
+import { NavigationContainer } from '@react-navigation/native';
+import * as React from 'react';
+import Icon from 'react-native-vector-icons/FontAwesome';
+import HomeScreen from './screens/HomeScreen';
+import LightScreen from './screens/LightScreen';
+import TemperatureScreen from './screens/TemperatureScreen';
+
+const Tab = createBottomTabNavigator();
 
 export default function App() {
-  return (
-    <View style={styles.container}>
-      <Text>Open up App.js to start working on your app!</Text>
-      <StatusBar style="auto" />
-    </View>
-  );
-}
+    return (
+        <NavigationContainer>
+            <Tab.Navigator
+                screenOptions={({ route }) => ({
+                    tabBarIcon: ({ focused, color, size }) => {
+                        let iconName, iconType;
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#fff',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-});
+                        if (route.name === 'Home') {
+                            iconName = focused ? 'home' : 'home';
+                        } else if (route.name === 'Temperature') {
+                            iconName = focused ? 'thermometer-half' : 'thermometer-half';
+                        } else if (route.name === 'Lights') {
+                            iconName = focused ? 'lightbulb-o' : 'lightbulb-o';
+                        }
+
+                        // You can return any component that you like here!
+                        return <Icon name={iconName} size={size} color={color} />;
+                    },
+                })}
+                tabBarOptions={{
+                    activeTintColor: 'green',
+                    inactiveTintColor: 'gray',
+                }}
+            >
+                <Tab.Screen name="Lights" component={LightScreen} />
+                <Tab.Screen name="Temperature" component={TemperatureScreen} />
+                <Tab.Screen name="Home" component={HomeScreen} />
+            </Tab.Navigator>
+        </NavigationContainer>
+    );
+}
