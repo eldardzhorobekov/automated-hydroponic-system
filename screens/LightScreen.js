@@ -92,7 +92,7 @@ class WebsocketService {
 }
 
 const wsService = new WebsocketService();
-const _access_token = "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiI4NzUzNmY4Zjk2ZWY0ZTZmOWUxMWJkODIxOTI2Y2U5NCIsImlhdCI6MTYyMTY5NjA4MCwiZXhwIjoxNjIxNjk3ODgwfQ.vjRn5Nj18zbq-mu7EnZdDnRMuRDLryOTIlxJulAOWx4"
+const _access_token = "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiI4NzUzNmY4Zjk2ZWY0ZTZmOWUxMWJkODIxOTI2Y2U5NCIsImlhdCI6MTYyMTY5Nzg5MSwiZXhwIjoxNjIxNjk5NjkxfQ.ObWW3KNiGPXcWWMLRcNL3qDWqOZdyWpxQRZ1Uoqcch8"
 
 export default function LightScreen({navigation}) {
     const [active, setActive] = useState(false);
@@ -172,8 +172,8 @@ export default function LightScreen({navigation}) {
         };
     }, []);
 
-    function lightOnControllers() {
-        return (
+    function lightControllers() {
+        return !lightOn ? null : (
             <View>
                 <View>
                     <Slider
@@ -199,9 +199,8 @@ export default function LightScreen({navigation}) {
                             }
                         }}
                         noSnap={true}
-                        discrete={true}
+                        sliderSize={0}
                         swatches={false}
-                        disabled={true}
                     />
                 </View>
             </View>
@@ -216,10 +215,10 @@ export default function LightScreen({navigation}) {
                     <Icon name={'lightbulb-o'} color={lightOn ? 'yellow' : 'black'} size={100}/>
                 </TouchableOpacity>
             </View>
-            {!lightOn ? '' : lightOnControllers()}
+            {lightControllers()}
         </View>
     );
-}
+};
 
 const styles = StyleSheet.create({
     lightScreen: {
