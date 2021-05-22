@@ -5,94 +5,15 @@ import ColorPicker from 'react-native-wheel-color-picker';
 import Loading from '../components/Loading';
 import {hexToRGB, RGBToHex} from '../utils';
 import Slider from '@react-native-community/slider';
+import {LIGHT_ENTITY_ID, TYPES, WebsocketService} from "../services/WebsocketService";
 
-// todo: add brightness component
+// todo: refresh token
 // todo: authentication page
 // todo: subscribe events
-
-const TYPES = {
-    CALL_SERVICE: 'call_service',
-    AUTH: 'auth',
-    GET_STATES: 'get_states'
-}
-const LIGHT_ENTITY_ID = 'light.rgb_led_light';
-
-
-class WebsocketService {
-    constructor() {
-        this.domain = 'ws://homeassistant.local:8123/api/websocket';
-        this.ws = new WebSocket(this.domain);
-        this.id = 1;
-        this.types = {}
-    }
-
-    authenticate(access_token) {
-        const type = TYPES.AUTH;
-        const data = {
-            type: type,
-            access_token: access_token
-        };
-        this._wsSend(data);
-        this.id++;
-    }
-
-    turnLightOn() {
-        this._changeLightState({service: "turn_on"});
-    }
-
-    turnLightOff() {
-        this._changeLightState({service: "turn_off"});
-    }
-
-    setLightColor(rgb_color) {
-        this._changeLightState({service: "turn_on", rgb_color: rgb_color});
-    }
-
-    setBrightnessPct(brightness_pct) {
-        this._changeLightState({service: "turn_on", brightness_pct: brightness_pct})
-    }
-
-    _changeLightState({service, rgb_color, brightness_pct}) {
-        const type = TYPES.CALL_SERVICE;
-        this.types[this.id] = type;
-        const data = {
-            domain: "light",
-            id: this.id++,
-            service: service,
-            service_data: {entity_id: "light.rgb_led_light"},
-            type: type,
-        };
-        if (rgb_color) {
-            data.service_data.rgb_color = rgb_color;
-        }
-        if (brightness_pct) {
-            data.service_data.brightness_pct = brightness_pct;
-        }
-        this._wsSend(data);
-    }
-
-    getStates() {
-        const type = TYPES.GET_STATES;
-        this.types[this.id] = type;
-        const data = {
-            id: this.id++,
-            type: type
-        }
-        this._wsSend(data)
-    }
-
-    _wsSend(data) {
-        console.log("TRYING TO SEND", data);
-        try {
-            this.ws.send(JSON.stringify(data));
-        } catch (e) {
-            console.error('WS: COULD NOT SEND DATA', e);
-        }
-    }
-}
+// todo: divide logic: 1)no connection to webserver 2)device is off
 
 const wsService = new WebsocketService();
-const _access_token = "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiI4NzUzNmY4Zjk2ZWY0ZTZmOWUxMWJkODIxOTI2Y2U5NCIsImlhdCI6MTYyMTY5Nzg5MSwiZXhwIjoxNjIxNjk5NjkxfQ.ObWW3KNiGPXcWWMLRcNL3qDWqOZdyWpxQRZ1Uoqcch8"
+const _access_token = "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiI4NzUzNmY4Zjk2ZWY0ZTZmOWUxMWJkODIxOTI2Y2U5NCIsImlhdCI6MTYyMTcyNTQ4MSwiZXhwIjoxNjIxNzI3MjgxfQ.FeiiMbyAiYq7OE5beNdvtonsUBPXvC-cTYIIJi9U1uQ"
 
 export default function LightScreen({navigation}) {
     const [active, setActive] = useState(false);
@@ -121,8 +42,8 @@ export default function LightScreen({navigation}) {
         console.log('response type', responseType)
         switch (responseType) {
             case TYPES.GET_STATES:
-                const lightEntity = result.find(entity => entity.entity_id == LIGHT_ENTITY_ID);
-                if (lightEntity.state == 'on') {
+                const lightEntity = result.find(entity => entity.entity_id === LIGHT_ENTITY_ID);
+                if (lightEntity.state === 'on') {
                     setLightOn(true);
                     const [r, g, b] = lightEntity.attributes.rgb_color;
                     setCurrentColor(RGBToHex(r, g, b));
