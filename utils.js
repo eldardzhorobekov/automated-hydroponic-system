@@ -21,3 +21,7 @@ function componentToHex(c) {
 export function RGBToHex(r, g, b) {
     return "#" + componentToHex(r) + componentToHex(g) + componentToHex(b);
 }
+
+export function arraysEqual(array1, array2) {
+    return JSON.stringify(array1) === JSON.stringify(array2);
+}
