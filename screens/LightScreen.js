@@ -6,37 +6,14 @@ import Loading from '../components/Loading';
 import {arraysEqual, hexToRGB, RGBToHex} from '../utils';
 import Slider from '@react-native-community/slider';
 import {LIGHT_ENTITY_ID, TYPES, WebsocketService} from "../services/WebsocketService";
-
+import { postData } from "../services/utils";
 // todo: authentication page
 // todo: divide logic: 1)no connection to webserver 2)device is off
 
 const domain = 'ws://homeassistant.local:8123/api/websocket';
 const wsService = new WebsocketService();
 const _refresh_token = "ae165f3e583d7db83d091b1b4f4b638d5eb45ab051dbaf4258b16fdf561794178f96305432ca2bf3b8e52cf91e277457596676327b737a07c1b716c5f66389d4";
-let _access_token = "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiI4NzUzNmY4Zjk2ZWY0ZTZmOWUxMWJkODIxOTI2Y2U5NCIsImlhdCI6MTYyMTczMzM0NywiZXhwIjoxNjIxNzM1MTQ3fQ.qAGRO8z41H4wYO4eNz5G1RH7hVIIIDhAaADzNbUY6lg";
-
-async function postData(url = '', data = {}) {
-    // Default options are marked with *
-    const formData = new FormData();
-
-    for (const name in data) {
-        formData.append(name, data[name]);
-    }
-    const response = await fetch(url, {
-        method: 'POST', // *GET, POST, PUT, DELETE, etc.
-        mode: 'cors', // no-cors, *cors, same-origin
-        cache: 'no-cache', // *default, no-cache, reload, force-cache, only-if-cached
-        credentials: 'same-origin', // include, *same-origin, omit
-        // headers: {
-        //     // 'Content-Type': 'application/json'
-        //     // 'Content-Type': 'application/x-www-form-urlencoded',
-        // },
-        redirect: 'follow', // manual, *follow, error
-        referrerPolicy: 'no-referrer', // no-referrer, *client
-        body: formData
-    });
-    return await response.json(); // parses JSON response into native JavaScript objects
-}
+let _access_token = "";
 
 export default function LightScreen({navigation}) {
     const [active, setActive] = useState(false);
