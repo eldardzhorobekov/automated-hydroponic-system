@@ -1,29 +1,22 @@
 import React, {useEffect, useState} from "react";
 import {StyleSheet, Text, TextInput, TouchableOpacity, View} from "react-native";
 import {postData, postFormData} from "../services/utils";
-// import AsyncStorage from '@react-native-community/async-storage'
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import {FontAwesomeIcon} from '@fortawesome/react-native-fontawesome'
+import {faSpinner} from '@fortawesome/free-solid-svg-icons'
 
 
 const client_id = "http://homeassistant.local:8123/"
 
-// todo: implement auth flow with error checking
 // todo: save tokens in localStorage
 
-const _storeData = async () => {
-    try {
-        await AsyncStorage.setItem(
-            '@MySuperStore:key',
-            'I like to save it.'
-        );
-    } catch (error) {
-        // Error saving data
-    }
-};
+
 export default function LoginScreen() {
-    const [email, setEmail] = useState('');
-    const [password, setPassword] = useState('');
+    const [username, setUsername] = useState('SmartHome');
+    const [password, setPassword] = useState('SmartHome');
     const [authFlow, setAuthFlow] = useState(null);
     const [authCode, setAuthCode] = useState(null);
+    const [loading, setLoading] = useState(false);
     const [tokens, setTokens] = useState(null);
     const [data, setData] = useState(null);
     const [error, setError] = useState();
@@ -36,52 +29,80 @@ export default function LoginScreen() {
         };
         return postData(url, data)
     }
-    const getAuthCode = async (flow_id) => {
-        const url = `http://192.168.43.109:8123/auth/login_flow/${flow_id}`;
+    const getAuthCode = async () => {
+        let _flowId = null;
+        await getFlowId()
+            .then(_data => {
+                _flowId = _data.flow_id;
+                setAuthFlow(_data);
+            })
+            .catch(_error => {
+                setError(_error);
+                setLoading(false);
+                alert('COULD NOT GET FLOW_ID. MAYBE SERVER IS DOWN.')
+                return;
+            })
+
+        const url = `http://192.168.43.109:8123/auth/login_flow/${_flowId}`;
         const data = {
-            "username": "SmartHome",
-            "password": "SmartHome",
+            "username": username,
+            "password": password,
             "client_id": client_id
         };
-        return postData(url, data)
+        return postData(url, data);
     }
     const getAuthTokens = async () => {
+        let _authCode = null;
+        await getAuthCode()
+            .then(_data => {
+                _authCode = _data.result;
+                setAuthCode(_data);
+            })
+            .catch(_error => {
+                setError(_error);
+                setLoading(false);
+                alert('COULD NOT GET AUTH_CODE. MAYBE SERVER IS DOWN.')
+                return;
+            });
         const url = 'http://192.168.43.109:8123/auth/token';
         const formData = {
             client_id: client_id,
-            code: authCode.result,
+            code: _authCode,
             grant_type: 'authorization_code'
         }
         return postFormData(url, formData)
     }
+    const onPressLogin = async (e) => {
+        setLoading(true);
+        await getAuthTokens()
+            .then(_data => {
+                setTokens(_data)
+            })
+            .catch(_error => {
+                setError(_error)
+                alert('COULD NOT GET TOKENS!');
+                console.error(_error);
+            })
+        setLoading(false);
+    }
+
     useEffect(() => {
-        async function fetchData() {
-            getFlowId()
-                .then(_data => {
-                    setAuthFlow(_data)
-                    setData(_data)
-                })
-                .catch(e => setError(e))
-
-            getAuthCode(authFlow.flow_id)
-                .then(_data => {
-                    setAuthCode(_data)
-                })
-                .catch(e => setError(e))
-
-            getAuthTokens()
-                .then(_data => {
-                    setTokens(_data)
-                })
-                .catch(e => setError(e))
-            // const flowId = await getFlowId();
-            // const code = await getAuthCode();
-            // const tokens = await getAuthTokens();
+        const saveTokens = async () => {
+            if(tokens != null) {
+                try {
+                    const jsonTokens = JSON.stringify(tokens)
+                    console.log('SAVING IN LOCAL STORAGE', jsonTokens);
+                    await AsyncStorage.setItem('@tokens', jsonTokens);
+                } catch (error) {
+                    console.error('COULD NOT SAVE TOKENS!')
+                }
+            }
         }
-        fetchData()
-            .then(_data => setData(_data))
-            .catch(e => setError(e));
-    }, []);
+        saveTokens()
+            .then(_data => console.log(_data, 'SAVED!'))
+            .catch(_error => console.error(_error, 'ERROR!'));
+    }, [tokens]);
+
     return (
         <View style={styles.loginView}>
             <Text style={styles.title}>Hydroponics</Text>
@@ -90,7 +111,8 @@ export default function LoginScreen() {
                     style={styles.TextInput}
                     placeholder="Email."
                     placeholderTextColor="#003f5c"
-                    onChangeText={(email) => setEmail(email)}
+                    onChangeText={(username) => setUsername(username)}
+                    value={username}
                 />
             </View>
             <View style={styles.inputView}>
@@ -100,16 +122,15 @@ export default function LoginScreen() {
                     placeholderTextColor="#003f5c"
                     secureTextEntry={true}
                     onChangeText={(password) => setPassword(password)}
+                    value={password}
                 />
             </View>
-            <TouchableOpacity style={styles.loginBtn}>
-                <Text style={styles.loginText}>LOGIN</Text>
+            <TouchableOpacity onPress={onPressLogin} style={styles.loginBtn}>
+                <Text style={styles.loginText}>LOGIN {loading ? <FontAwesomeIcon icon={faSpinner}/> : ''}</Text>
             </TouchableOpacity>
-            <Text>Flow id: {JSON.stringify(authFlow)}</Text>
-            <Text>Code id: {JSON.stringify(authCode)}</Text>
-            <Text>Tokens: {JSON.stringify(tokens)}</Text>
-            <Text>Data: {JSON.stringify(data)}</Text>
-            <Text style={{ backgroundColor: 'red' }}>Error: {JSON.stringify(error)}</Text>
+            {/*<Text>Flow id: {JSON.stringify(authFlow)}</Text>*/}
+            {/*<Text>Code id: {JSON.stringify(authCode)}</Text>*/}
+            {/*<Text>Tokens: {JSON.stringify(tokens)}</Text>*/}
         </View>
     )
 };
@@ -139,6 +160,7 @@ const styles = StyleSheet.create({
         alignItems: "center",
     },
     TextInput: {
+        width: '100%',
         height: 50,
         flex: 1,
         padding: 10,
@@ -151,6 +173,8 @@ const styles = StyleSheet.create({
         alignItems: "center",
         justifyContent: "center",
         backgroundColor: "lightblue",
+        display: 'flex',
+        color: '#ffffff',
     },
     loginText: {
         color: '#ffffff',
