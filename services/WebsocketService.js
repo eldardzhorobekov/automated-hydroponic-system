@@ -1,5 +1,3 @@
-import {arraysEqual} from "../utils";
-
 export const TYPES = {
     CALL_SERVICE: 'call_service',
     AUTH: 'auth',
@@ -51,11 +49,11 @@ export class WebsocketService {
         this._changeLightState({service: "turn_on", rgb_color: rgb_color});
     }
 
-    setBrightnessPct(brightness_pct) {
-        this._changeLightState({service: "turn_on", brightness_pct: brightness_pct})
+    setBrightness(brightness) {
+        this._changeLightState({service: "turn_on", brightness: brightness})
     }
 
-    _changeLightState({service, rgb_color, brightness_pct}) {
+    _changeLightState({service, rgb_color, brightness}) {
         const type = TYPES.CALL_SERVICE;
         this.types[this.id] = type;
         const data = {
@@ -68,8 +66,8 @@ export class WebsocketService {
         if (typeof rgb_color !== 'undefined') {
             data.service_data.rgb_color = rgb_color;
         }
-        if (typeof brightness_pct !== 'undefined') {
-            data.service_data.brightness_pct = brightness_pct;
+        if (typeof brightness !== 'undefined') {
+            data.service_data.brightness = brightness;
         }
         this._wsSend(data);
     }

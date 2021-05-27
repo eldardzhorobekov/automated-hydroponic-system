@@ -3,27 +3,27 @@ import {StyleSheet, Text, TouchableOpacity, View} from "react-native";
 import Icon from 'react-native-vector-icons/FontAwesome';
 import ColorPicker from 'react-native-wheel-color-picker';
 import Loading from '../components/Loading';
-import {arraysEqual, hexToRGB, RGBToHex} from '../utils';
+import {hexToRGB, RGBToHex} from '../utils';
 import Slider from '@react-native-community/slider';
 import {LIGHT_ENTITY_ID, TYPES, WebsocketService} from "../services/WebsocketService";
-import { postData } from "../services/utils";
+import {postData} from "../services/utils";
+import {useDispatch, useSelector} from "react-redux";
 // todo: authentication page
 // todo: divide logic: 1)no connection to webserver 2)device is off
 
-const domain = 'ws://homeassistant.local:8123/api/websocket';
+const domain = 'ws://192.168.43.109:8123/api/websocket';
 const wsService = new WebsocketService();
-const _refresh_token = "ae165f3e583d7db83d091b1b4f4b638d5eb45ab051dbaf4258b16fdf561794178f96305432ca2bf3b8e52cf91e277457596676327b737a07c1b716c5f66389d4";
-let _access_token = "";
 
-export default function LightScreen({navigation}) {
+export default function LightScreen() {
+    const _tokens = useSelector(state => state.tokens);
+    const dispatch = useDispatch();
     const [active, setActive] = useState(false);
     const [loading, setLoading] = useState(true);
     const [currentColor, setCurrentColor] = useState(null);
-    const [colorPickerId, setColorPickerId] = useState(0);
     const [lightOn, setLightOn] = useState(false);
     const [brightness, setBrightness] = useState(40);
 
-    const onPressLightButton = (event) => {
+    const onPressLightButton = () => {
         console.log('CLICKED!');
         if (lightOn) {
             console.log("Turning Light ON")
@@ -59,7 +59,6 @@ export default function LightScreen({navigation}) {
 
     const processEvent = (response) => {
         const newState = response.event.data.new_state;
-        const oldState = response.event.data.old_state;
         console.log('EVENT');
         switch (response.event.data.entity_id) {
             case LIGHT_ENTITY_ID:
@@ -67,9 +66,9 @@ export default function LightScreen({navigation}) {
                 if (newState.state === 'on') {
                     setLightOn(true);
                     const brightness = newState.attributes.brightness;
-                    if(typeof brightness !== 'undefined') {
-                        setBrightness(brightness)
-                    }
+                    const [r, g, b] = newState.attributes.rgb_color;
+                    setBrightness(brightness)
+                    setCurrentColor(RGBToHex(r, g, b));
                 } else {
                     setLightOn(false);
                 }
@@ -83,7 +82,7 @@ export default function LightScreen({navigation}) {
         wsService.ws.onopen = () => {
             console.log('WEBSOCKET OPEN');
             console.log('TRYING TO AUTHENTICATE');
-            wsService.authenticate(_access_token);
+            wsService.authenticate(_tokens.access_token);
         }
         wsService.ws.onmessage = async (e) => {
             const response = JSON.parse(e.data);
@@ -107,19 +106,21 @@ export default function LightScreen({navigation}) {
                     break;
                 case 'auth_invalid':
                     console.error('AUTH INVALID');
-                    const domain = 'http://homeassistant.local:8123';
+                    const domain = 'http://192.168.43.109:8123';
                     const url = `${domain}/auth/token`;
                     const data = {
                         client_id: "http://homeassistant.local:8123/",
                         grant_type: "refresh_token",
-                        refresh_token: _refresh_token
+                        refresh_token: _tokens.refresh_token
                     }
                     await postData(url, data)
                         .then((data) => {
-                            _access_token = data.access_token;
+                            const _tokens = {...tokens, access_token: data.access_token};
+                            dispatch({type: 'SET_TOKENS', payload: _tokens});
                         })
                         .catch((error) => {
-                            console.error('COULD NOT VALIDATE REFRESH TOKEN. GOING TO LOGIN SCREEN');
+                            console.error('COULD NOT VALIDATE REFRESH TOKEN. GOING TO LOGIN SCREEN', error);
+                            dispatch({type: 'RESET_TOKENS'})
                             // todo: go to login screen
                         });
                     break;
@@ -132,30 +133,31 @@ export default function LightScreen({navigation}) {
         wsService.ws.onclose = (e) => {
             console.error("WEBSOCKET CLOSED", e.code, e.reason);
             setLoading(true);
-            wsService.ws = null
-            setTimeout(startWebsocket, 1000)
+            wsService.ws = null;
+            setTimeout(startWebsocket, 1000);
         };
     }
     useEffect(() => {
         startWebsocket();
+        // alert(JSON.stringify(_tokens));
     }, []);
 
     function lightControllers() {
         return !lightOn ? null : (
-            <View>
-                <View>
+            <View style={{flex: 3}}>
+                <View style={{}}>
                     <Slider
-                        style={{width: 200, height: 40}}
+                        style={{width: '100%', height: 40, backgroundColor: 'white'}}
                         minimumValue={0}
                         maximumValue={255}
                         value={brightness}
                         onSlidingComplete={(e) => {
-                            wsService.setBrightnessPct(e);
+                            wsService.setBrightness(e);
                         }}
                         onValueChange={setBrightness}
                     />
                 </View>
-                <View>
+                <View style={{flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'flex-start'}}>
                     {!currentColor ? null :
                         <ColorPicker
                             color={currentColor}
@@ -166,6 +168,7 @@ export default function LightScreen({navigation}) {
                             noSnap={true}
                             sliderSize={0}
                             swatches={false}
+                            style={{backgroundColor: 'white', justifyContent: 'flex-start'}}
                         />
                     }
                 </View>
@@ -176,9 +179,9 @@ export default function LightScreen({navigation}) {
     return loading ? (<Loading/>) : (
         <View style={styles.lightScreen}>
             <Text>{active ? 'Active' : 'Inactive'}</Text>
-            <View>
+            <View style={styles.light}>
                 <TouchableOpacity onPress={onPressLightButton}>
-                    <Icon name={'lightbulb-o'} color={lightOn ? 'yellow' : 'black'} size={100}/>
+                    <Icon name={'lightbulb-o'} color={lightOn ? '#f9ca24' : 'black'} size={200}/>
                 </TouchableOpacity>
             </View>
             {lightControllers()}
@@ -189,10 +192,11 @@ export default function LightScreen({navigation}) {
 const styles = StyleSheet.create({
     lightScreen: {
         flex: 1,
-        justifyContent: 'center',
+        backgroundColor: 'white'
+    },
+    light: {
+        flex: 2,
         alignItems: 'center',
-        display: 'flex',
-        flexDirection: 'column',
-        flexWrap: 'wrap',
+        justifyContent: 'center'
     }
 });

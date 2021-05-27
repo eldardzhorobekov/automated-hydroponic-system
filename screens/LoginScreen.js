@@ -4,21 +4,20 @@ import {postData, postFormData} from "../services/utils";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import {FontAwesomeIcon} from '@fortawesome/react-native-fontawesome'
 import {faSpinner} from '@fortawesome/free-solid-svg-icons'
+import {useDispatch} from "react-redux";
 
 
 const client_id = "http://homeassistant.local:8123/"
 
 // todo: save tokens in localStorage
 
-
 export default function LoginScreen() {
+    const dispatch = useDispatch();
+
     const [username, setUsername] = useState('SmartHome');
     const [password, setPassword] = useState('SmartHome');
-    const [authFlow, setAuthFlow] = useState(null);
-    const [authCode, setAuthCode] = useState(null);
     const [loading, setLoading] = useState(false);
     const [tokens, setTokens] = useState(null);
-    const [data, setData] = useState(null);
     const [error, setError] = useState();
     const getFlowId = async () => {
         const url = 'http://192.168.43.109:8123/auth/login_flow';
@@ -34,13 +33,11 @@ export default function LoginScreen() {
         await getFlowId()
             .then(_data => {
                 _flowId = _data.flow_id;
-                setAuthFlow(_data);
             })
             .catch(_error => {
                 setError(_error);
                 setLoading(false);
                 alert('COULD NOT GET FLOW_ID. MAYBE SERVER IS DOWN.')
-                return;
             })
 
         const url = `http://192.168.43.109:8123/auth/login_flow/${_flowId}`;
@@ -56,13 +53,11 @@ export default function LoginScreen() {
         await getAuthCode()
             .then(_data => {
                 _authCode = _data.result;
-                setAuthCode(_data);
             })
             .catch(_error => {
                 setError(_error);
                 setLoading(false);
                 alert('COULD NOT GET AUTH_CODE. MAYBE SERVER IS DOWN.')
-                return;
             });
         const url = 'http://192.168.43.109:8123/auth/token';
         const formData = {
@@ -72,11 +67,16 @@ export default function LoginScreen() {
         }
         return postFormData(url, formData)
     }
-    const onPressLogin = async (e) => {
+    const onPressLogin = async () => {
         setLoading(true);
         await getAuthTokens()
             .then(_data => {
-                setTokens(_data)
+                if(_data.error) {
+                    setError(_data.error_description);
+                } else {
+                    setTokens(_data)
+                    dispatch({type: 'SET_TOKENS', payload: _data})
+                }
             })
             .catch(_error => {
                 setError(_error)
@@ -128,6 +128,8 @@ export default function LoginScreen() {
             <TouchableOpacity onPress={onPressLogin} style={styles.loginBtn}>
                 <Text style={styles.loginText}>LOGIN {loading ? <FontAwesomeIcon icon={faSpinner}/> : ''}</Text>
             </TouchableOpacity>
+            <Text style={styles.errorText}>{error}</Text>
+            {/*<Text>{JSON.stringify(tokens)}</Text>*/}
             {/*<Text>Flow id: {JSON.stringify(authFlow)}</Text>*/}
             {/*<Text>Code id: {JSON.stringify(authCode)}</Text>*/}
             {/*<Text>Tokens: {JSON.stringify(tokens)}</Text>*/}
@@ -179,5 +181,9 @@ const styles = StyleSheet.create({
     loginText: {
         color: '#ffffff',
         fontWeight: 'bold'
+    },
+    errorText: {
+        color: 'red',
+        marginTop: 5
     }
 })
