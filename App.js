@@ -3,7 +3,7 @@ import {NavigationContainer} from '@react-navigation/native';
 import * as React from 'react';
 import {useEffect} from 'react';
 import Icon from 'react-native-vector-icons/FontAwesome';
-import HomeScreen from './screens/HomeScreen';
+import SettingsScreen from './screens/SettingsScreen';
 import LightScreen from './screens/LightScreen';
 import TemperatureScreen from './screens/TemperatureScreen';
 import LoginScreen from "./screens/LoginScreen";
@@ -40,8 +40,8 @@ function App() {
                             tabBarIcon: ({focused, color, size}) => {
                                 let iconName;
 
-                                if (route.name === 'Home') {
-                                    iconName = focused ? 'home' : 'home';
+                                if (route.name === 'Settings') {
+                                    iconName = focused ? 'list' : 'list';
                                 } else if (route.name === 'Temperature') {
                                     iconName = focused ? 'thermometer-half' : 'thermometer-half';
                                 } else if (route.name === 'Lights') {
@@ -59,7 +59,7 @@ function App() {
                     >
                         <Tab.Screen name="Lights" component={LightScreen}/>
                         <Tab.Screen name="Temperature" component={TemperatureScreen}/>
-                        <Tab.Screen name="Home" component={HomeScreen}/>
+                        <Tab.Screen name="Settings" component={SettingsScreen}/>
                     </Tab.Navigator>
                 )}
         </NavigationContainer>
