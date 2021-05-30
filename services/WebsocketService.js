@@ -1,11 +1,4 @@
-export const TYPES = {
-    CALL_SERVICE: 'call_service',
-    AUTH: 'auth',
-    GET_STATES: 'get_states',
-    SUBSCRIBE_EVENTS: 'subscribe_events'
-}
-export const LIGHT_ENTITY_ID = 'light.rgb_led_light';
-
+import {TYPES} from "../constants";
 
 export class WebsocketService {
     constructor() {

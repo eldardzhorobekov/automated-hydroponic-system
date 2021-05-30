@@ -1,23 +1,19 @@
-import React, {useEffect, useState} from "react";
+import React, {useState} from "react";
 import {StyleSheet, Text, TextInput, TouchableOpacity, View} from "react-native";
 import {postData, postFormData} from "../services/utils";
-import AsyncStorage from "@react-native-async-storage/async-storage";
 import {FontAwesomeIcon} from '@fortawesome/react-native-fontawesome'
 import {faSpinner} from '@fortawesome/free-solid-svg-icons'
 import {useDispatch} from "react-redux";
+import {client_id, domain} from "../constants";
 
-
-const client_id = "http://homeassistant.local:8123/"
 
 // todo: save tokens in localStorage
 
 export default function LoginScreen() {
     const dispatch = useDispatch();
-
     const [username, setUsername] = useState('SmartHome');
     const [password, setPassword] = useState('SmartHome');
     const [loading, setLoading] = useState(false);
-    const [tokens, setTokens] = useState(null);
     const [error, setError] = useState();
     const getFlowId = async () => {
         const url = 'http://192.168.43.109:8123/auth/login_flow';
@@ -40,7 +36,7 @@ export default function LoginScreen() {
                 alert('COULD NOT GET FLOW_ID. MAYBE SERVER IS DOWN.')
             })
 
-        const url = `http://192.168.43.109:8123/auth/login_flow/${_flowId}`;
+        const url = `${domain}/auth/login_flow/${_flowId}`;
         const data = {
             "username": username,
             "password": password,
@@ -73,9 +69,9 @@ export default function LoginScreen() {
             .then(_data => {
                 if(_data.error) {
                     setError(_data.error_description);
+                    setLoading(false);
                 } else {
-                    setTokens(_data)
-                    dispatch({type: 'SET_TOKENS', payload: _data})
+                    dispatch({type: 'SET_TOKENS', payload: _data});
                 }
             })
             .catch(_error => {
@@ -83,25 +79,7 @@ export default function LoginScreen() {
                 alert('COULD NOT GET TOKENS!');
                 console.error(_error);
             })
-        setLoading(false);
     }
-
-    useEffect(() => {
-        const saveTokens = async () => {
-            if(tokens != null) {
-                try {
-                    const jsonTokens = JSON.stringify(tokens)
-                    console.log('SAVING IN LOCAL STORAGE', jsonTokens);
-                    await AsyncStorage.setItem('@tokens', jsonTokens);
-                } catch (error) {
-                    console.error('COULD NOT SAVE TOKENS!')
-                }
-            }
-        }
-        saveTokens()
-            .then(_data => console.log(_data, 'SAVED!'))
-            .catch(_error => console.error(_error, 'ERROR!'));
-    }, [tokens]);
 
     return (
         <View style={styles.loginView}>
@@ -129,10 +107,6 @@ export default function LoginScreen() {
                 <Text style={styles.loginText}>LOGIN {loading ? <FontAwesomeIcon icon={faSpinner}/> : ''}</Text>
             </TouchableOpacity>
             <Text style={styles.errorText}>{error}</Text>
-            {/*<Text>{JSON.stringify(tokens)}</Text>*/}
-            {/*<Text>Flow id: {JSON.stringify(authFlow)}</Text>*/}
-            {/*<Text>Code id: {JSON.stringify(authCode)}</Text>*/}
-            {/*<Text>Tokens: {JSON.stringify(tokens)}</Text>*/}
         </View>
     )
 };

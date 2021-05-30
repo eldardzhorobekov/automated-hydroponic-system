@@ -7,34 +7,133 @@ import SettingsScreen from './screens/SettingsScreen';
 import LightScreen from './screens/LightScreen';
 import TemperatureScreen from './screens/TemperatureScreen';
 import LoginScreen from "./screens/LoginScreen";
-import AsyncStorage from "@react-native-async-storage/async-storage";
 import reducer from "./reducer";
-import {Provider, useSelector} from "react-redux";
+import {Provider, useDispatch, useSelector} from "react-redux";
 import {createStore} from "redux";
+import {client_id, domain, LIGHT_ENTITY_ID, TYPES, ws_domain} from "./constants";
+import {postData} from "./services/utils";
+import {RGBToHex} from "./utils";
+import {WebsocketService} from "./services/WebsocketService";
 
 const Tab = createBottomTabNavigator();
 const store = createStore(reducer);
 
+const wsService = new WebsocketService(ws_domain);
 
 function App() {
+    const dispatch = useDispatch();
     const _tokens = useSelector(state => state.tokens);
-    useEffect(() => {
-        const getToken = async () => {
-            try {
-                await AsyncStorage.getItem('@tokens');
-            } catch (error) {
-                console.error('COULD NOT GET TOKENS!')
-            }
+
+    const handleResult = (response) => {
+
+        const responseId = response.id;
+        const responseType = wsService.types[responseId];
+        const result = response.result;
+        console.log('RESULT');
+        console.log('response type', responseType)
+        switch (responseType) {
+            case TYPES.GET_STATES:
+                const lightEntity = result.find(entity => entity.entity_id === LIGHT_ENTITY_ID);
+                if (lightEntity.state === 'on') {
+                    const [r, g, b] = lightEntity.attributes.rgb_color;
+                    dispatch({type: 'SET_LIGHT_ON'});
+                    dispatch({type: 'SET_COLOR', payload: RGBToHex(r, g, b)})
+                } else {
+                    dispatch({type: 'SET_LIGHT_OFF'});
+                }
+                dispatch({type: 'SET_LOADING', payload: false});
+                break;
+            case TYPES.CALL_SERVICE:
+                break;
         }
-        getToken()
-            .then((tokens) => {
-                console.log(tokens);
-            })
-    }, []);
+    };
+    const handleEvent = (response) => {
+        console.log('EVENT');
+        const newState = response.event.data.new_state;
+        switch (response.event.data.entity_id) {
+            case LIGHT_ENTITY_ID:
+                console.log("NEW STATE", newState);
+                if (newState.state === 'on') {
+                    dispatch({type: 'SET_LIGHT_ON', payload: {}});
+                    const brightness = newState.attributes.brightness;
+                    const [r, g, b] = newState.attributes.rgb_color;
+                    dispatch({type: 'SET_COLOR', payload: RGBToHex(r, g, b)});
+                    dispatch({type: 'SET_BRIGHTNESS', payload: brightness});
+                } else {
+                    dispatch({type: 'SET_LIGHT_OFF', payload: {}});
+                }
+                break;
+            default:
+                console.warn('NO ENTITY FOUND');
+        }
+    };
+
+    const startWebsocket = () => {
+        wsService.ws = new WebSocket(ws_domain);
+        wsService.ws.onopen = () => {
+            console.log('WEBSOCKET OPEN');
+            console.log('TRYING TO AUTHENTICATE WITH', _tokens);
+            wsService.authenticate(_tokens.access_token);
+        }
+        wsService.ws.onmessage = async (e) => {
+            const response = JSON.parse(e.data);
+            const type = response.type;
+            console.log('TYPE', type);
+            switch (type) {
+                case 'result':
+                    handleResult(response);
+                    break;
+                case 'event':
+                    handleEvent(response);
+                    break
+                case 'auth_required':
+                    dispatch({type: 'SET_WS_INACTIVE'})
+                    break;
+                case 'auth_ok':
+                    wsService.getStates();
+                    wsService.subscribeEvents();
+                    dispatch({type: 'SET_WS_ACTIVE'});
+                    break;
+                case 'auth_invalid':
+                    console.error('AUTH INVALID');
+                    const url = `${domain}/auth/token`;
+                    const data = {
+                        client_id: client_id,
+                        grant_type: "refresh_token",
+                        refresh_token: _tokens.refresh_token
+                    }
+                    await postData(url, data)
+                        .then((data) => {
+                            dispatch({type: 'SET_TOKENS', payload: {..._tokens, access_token: data.access_token}});
+                        })
+                        .catch((error) => {
+                            console.error('COULD NOT VALIDATE REFRESH TOKEN. GOING TO LOGIN SCREEN', error);
+                            dispatch({type: 'RESET_TOKENS'})
+                        });
+                    break;
+            }
+        };
+        wsService.ws.onerror = (e) => {
+            console.error("WEBSOCKET ERROR", e.message);
+            dispatch({type: 'SET_WS_INACTIVE'});
+        };
+        wsService.ws.onclose = (e) => {
+            console.error("WEBSOCKET CLOSED", e.code, e.reason);
+            dispatch({type: 'SET_WS_INACTIVE'});
+            wsService.ws = null;
+            setTimeout(startWebsocket, 1000);
+        };
+    }
+
+    useEffect(() => {
+        if (_tokens !== null && wsService.ws === null) {
+            startWebsocket();
+        }
+    }, [_tokens]);
     return (
         <NavigationContainer>
             {
-                !_tokens ? <LoginScreen/> : (
+                _tokens === null ? <LoginScreen/> : (
                     <Tab.Navigator
                         screenOptions={({route}) => ({
                             tabBarIcon: ({focused, color, size}) => {
@@ -57,7 +156,7 @@ function App() {
                             inactiveTintColor: 'gray',
                         }}
                     >
-                        <Tab.Screen name="Lights" component={LightScreen}/>
+                        <Tab.Screen name="Lights" children={() => <LightScreen wsService={wsService}/>}/>
                         <Tab.Screen name="Temperature" component={TemperatureScreen}/>
                         <Tab.Screen name="Settings" component={SettingsScreen}/>
                     </Tab.Navigator>
