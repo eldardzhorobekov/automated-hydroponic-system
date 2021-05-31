@@ -10,7 +10,16 @@ import LoginScreen from "./screens/LoginScreen";
 import reducer from "./reducer";
 import {Provider, useDispatch, useSelector} from "react-redux";
 import {createStore} from "redux";
-import {client_id, domain, LIGHT_ENTITY_ID, TYPES, ws_domain} from "./constants";
+import {
+    client_id,
+    domain,
+    HUMIDITY_ENTITY_ID,
+    LIGHT_ENTITY_ID,
+    SUN_ENTITY_ID,
+    TEMPERATURE_ENTITY_ID,
+    TYPES,
+    ws_domain
+} from "./constants";
 import {postData} from "./services/utils";
 import {RGBToHex} from "./utils";
 import {WebsocketService} from "./services/WebsocketService";
@@ -42,6 +51,14 @@ function App() {
                     dispatch({type: 'SET_LIGHT_OFF'});
                 }
                 dispatch({type: 'SET_LOADING', payload: false});
+
+
+                const temperatureEntity = result.find(entity => entity.entity_id === TEMPERATURE_ENTITY_ID);
+                dispatch({type: 'SET_TEMPERATURE', payload: parseInt(temperatureEntity.state)});
+
+                const humidityEntity = result.find(entity => entity.entity_id === HUMIDITY_ENTITY_ID);
+                dispatch({type: 'SET_HUMIDITY', payload: parseInt(humidityEntity.state)});
+
                 break;
             case TYPES.CALL_SERVICE:
                 break;
@@ -52,7 +69,6 @@ function App() {
         const newState = response.event.data.new_state;
         switch (response.event.data.entity_id) {
             case LIGHT_ENTITY_ID:
-                console.log("NEW STATE", newState);
                 if (newState.state === 'on') {
                     dispatch({type: 'SET_LIGHT_ON', payload: {}});
                     const brightness = newState.attributes.brightness;
@@ -63,8 +79,17 @@ function App() {
                     dispatch({type: 'SET_LIGHT_OFF', payload: {}});
                 }
                 break;
+            case HUMIDITY_ENTITY_ID:
+                dispatch({type: 'SET_HUMIDITY', payload: parseInt(newState.state)});
+                break;
+            case TEMPERATURE_ENTITY_ID:
+                dispatch({type: 'SET_TEMPERATURE', payload: parseInt(newState.state)});
+                break;
+            case SUN_ENTITY_ID:
+                console.log('SUN IS SHINING!');
+                break;
             default:
-                console.warn('NO ENTITY FOUND');
+                console.warn('NO ENTITY FOUND', response.event.data.entity_id);
         }
     };
 

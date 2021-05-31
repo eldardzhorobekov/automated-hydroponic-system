@@ -6,6 +6,8 @@ const INITIAL_STATE = {
     color: null,
     lightIsOn: false,
     wsActive: false,
+    humidity: 0,
+    temperature: 0,
 };
 
 export default function reducer(state=INITIAL_STATE, action) {
@@ -26,6 +28,10 @@ export default function reducer(state=INITIAL_STATE, action) {
             return {...state, color: action.payload}
         case 'SET_BRIGHTNESS':
             return {...state, brightness: action.payload}
+        case 'SET_TEMPERATURE':
+            return {...state, temperature: action.payload}
+        case 'SET_HUMIDITY':
+            return {...state, humidity: action.payload}
         default:
             return state
             // throw new Error(`NO ACTION NAMED: ${action.type}`);
