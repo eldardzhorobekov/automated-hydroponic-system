@@ -11,7 +11,7 @@ const screenWidth = Dimensions.get("window").width;
 const chartConfig = {
     backgroundGradientFrom: "#ffffff",
     backgroundGradientTo: "#ffffff",
-    color: `rgba(250, 188, 89, .9)`,
+    color: (opacity = 1) => `rgba(250, 188, 89, .9)`,
     style: {
         borderRadius: 16
     },
