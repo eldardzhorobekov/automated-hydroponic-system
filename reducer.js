@@ -1,3 +1,4 @@
+import {UNAVAILABLE} from "./constants";
 
 const INITIAL_STATE = {
     count: 0,
@@ -8,9 +9,12 @@ const INITIAL_STATE = {
     wsActive: false,
     humidity: 0,
     temperature: 0,
+    isLightAvailable: false,
+    isTemperatureAvailable: false,
+    isHumidityAvailable: false,
 };
 
-export default function reducer(state=INITIAL_STATE, action) {
+export default function reducer(state = INITIAL_STATE, action) {
     switch (action.type) {
         case 'SET_TOKENS':
             return {...state, tokens: action.payload}
@@ -32,8 +36,14 @@ export default function reducer(state=INITIAL_STATE, action) {
             return {...state, temperature: action.payload}
         case 'SET_HUMIDITY':
             return {...state, humidity: action.payload}
+        case 'SET_LIGHT_AVAILABLE':
+            return {...state, isLightAvailable: action.payload !== UNAVAILABLE}
+        case 'SET_TEMPERATURE_AVAILABLE':
+            return {...state, isTemperatureAvailable: action.payload !== UNAVAILABLE}
+        case 'SET_HUMIDITY_AVAILABLE':
+            return {...state, isHumidityAvailable: action.payload !== UNAVAILABLE}
         default:
             return state
-            // throw new Error(`NO ACTION NAMED: ${action.type}`);
+        // throw new Error(`NO ACTION NAMED: ${action.type}`);
     }
 }

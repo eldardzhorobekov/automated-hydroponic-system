@@ -14,3 +14,4 @@ export const LIGHT_ENTITY_ID = 'light.rgb_led_light';
 export const TEMPERATURE_ENTITY_ID = 'sensor.temperature_2';
 export const HUMIDITY_ENTITY_ID = 'sensor.humidity_2';
 export const SUN_ENTITY_ID = 'sun.sun';
+export const UNAVAILABLE = 'unavailable';

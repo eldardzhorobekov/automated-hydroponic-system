@@ -1,5 +1,5 @@
 import React, {useState} from 'react';
-import {StyleSheet, TouchableOpacity, View} from "react-native";
+import {StyleSheet, Text, TouchableOpacity, View} from "react-native";
 import Icon from 'react-native-vector-icons/FontAwesome';
 import ColorPicker from 'react-native-wheel-color-picker';
 import Loading from '../components/Loading';
@@ -11,6 +11,7 @@ import {useDispatch, useSelector} from "react-redux";
 
 export default function LightScreen({wsService}) {
     const dispatch = useDispatch();
+    const isLightAvailable = useSelector(state => state.isLightAvailable);
     const _wsActive = useSelector(state => state.wsActive);
     const _lightIsOn = useSelector(state => state.lightIsOn);
     const _currentColor = useSelector(state => state.color);
@@ -28,6 +29,7 @@ export default function LightScreen({wsService}) {
     const setCurrentColor = (val) => {
         dispatch({type: 'SET_COLOR', payload: val})
     }
+
     function lightControllers() {
         return !_lightIsOn ? null : (
             <View style={{flex: 3}}>
@@ -66,6 +68,7 @@ export default function LightScreen({wsService}) {
         <View style={styles.lightScreen}>
             <View style={styles.light}>
                 <TouchableOpacity onPress={onPressLightButton}>
+                    <Text style={{textAlign: 'center'}}>{isLightAvailable ? '' : 'Unavailable'}</Text>
                     <Icon name={'lightbulb-o'} color={_lightIsOn ? '#f9ca24' : 'black'} size={200}/>
                 </TouchableOpacity>
             </View>

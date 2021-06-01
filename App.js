@@ -43,6 +43,7 @@ function App() {
         switch (responseType) {
             case TYPES.GET_STATES:
                 const lightEntity = result.find(entity => entity.entity_id === LIGHT_ENTITY_ID);
+                dispatch({type: 'SET_LIGHT_AVAILABLE', payload: lightEntity.state});
                 if (lightEntity.state === 'on') {
                     const [r, g, b] = lightEntity.attributes.rgb_color;
                     dispatch({type: 'SET_LIGHT_ON'});
@@ -54,9 +55,10 @@ function App() {
 
 
                 const temperatureEntity = result.find(entity => entity.entity_id === TEMPERATURE_ENTITY_ID);
+                dispatch({type: 'SET_TEMPERATURE_AVAILABLE', payload: temperatureEntity.state});
                 dispatch({type: 'SET_TEMPERATURE', payload: parseInt(temperatureEntity.state)});
-
                 const humidityEntity = result.find(entity => entity.entity_id === HUMIDITY_ENTITY_ID);
+                dispatch({type: 'SET_HUMIDITY_AVAILABLE', payload: humidityEntity.state});
                 dispatch({type: 'SET_HUMIDITY', payload: parseInt(humidityEntity.state)});
 
                 break;
@@ -69,6 +71,8 @@ function App() {
         const newState = response.event.data.new_state;
         switch (response.event.data.entity_id) {
             case LIGHT_ENTITY_ID:
+                dispatch({type: 'SET_LIGHT_AVAILABLE', payload: newState.state});
+
                 if (newState.state === 'on') {
                     dispatch({type: 'SET_LIGHT_ON', payload: {}});
                     const brightness = newState.attributes.brightness;
@@ -80,9 +84,11 @@ function App() {
                 }
                 break;
             case HUMIDITY_ENTITY_ID:
+                dispatch({type: 'SET_HUMIDITY_AVAILABLE', payload: newState.state});
                 dispatch({type: 'SET_HUMIDITY', payload: parseInt(newState.state)});
                 break;
             case TEMPERATURE_ENTITY_ID:
+                dispatch({type: 'SET_TEMPERATURE_AVAILABLE', payload: newState.state});
                 dispatch({type: 'SET_TEMPERATURE', payload: parseInt(newState.state)});
                 break;
             case SUN_ENTITY_ID:

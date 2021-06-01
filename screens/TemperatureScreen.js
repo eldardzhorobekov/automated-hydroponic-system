@@ -20,10 +20,10 @@ const chartConfig = {
     }
 }
 
-function StateContainer({title, text, data}) {
+function StateContainer({title, text, data, available}) {
     return (
         <View style={style.stateContainer}>
-            <Text style={style.stateContainerTitle}>{title}</Text>
+            <Text style={style.stateContainerTitle}>{title} {available ? 'Available' : 'Unavailable'}</Text>
             <Text style={style.stateContainerText}>{text}</Text>
             <LineChart
                 key={data}
@@ -40,6 +40,8 @@ function StateContainer({title, text, data}) {
 
 
 export default function TemperatureScreen() {
+    const _isTemperatureAvailable = useSelector(state => state.isTemperatureAvailable);
+    const _isHumidityAvailable = useSelector(state => state.isHumidityAvailable);
     const _temperature = useSelector(state => state.temperature);
     const _humidity = useSelector(state => state.humidity);
     const [temperatureData, setTemperatureData] = useState([21]);
@@ -54,7 +56,7 @@ export default function TemperatureScreen() {
             .catch(_error => {
                 console.error(_error);
             })
-    }, HISTORY_UPDATE_S);
+    }, _isTemperatureAvailable ? HISTORY_UPDATE_S : null);
 
     useInterval(() => {
         fetchHistory(HUMIDITY_ENTITY_ID)
@@ -65,7 +67,7 @@ export default function TemperatureScreen() {
             .catch(_error => {
                 console.error(_error);
             })
-    }, HISTORY_UPDATE_S);
+    }, _isHumidityAvailable ? HISTORY_UPDATE_S : null);
 
     return (
         <View
@@ -78,11 +80,13 @@ export default function TemperatureScreen() {
             <StateContainer title={'Temperature'}
                             text={_temperature + '°C'}
                             data={temperatureData}
+                            available={_isTemperatureAvailable}
             />
             <View style={style.divider}/>
             <StateContainer title={'Humidity'}
                             text={_humidity + '%'}
                             data={humidityData}
+                            available={_isHumidityAvailable}
             />
         </View>
     );
